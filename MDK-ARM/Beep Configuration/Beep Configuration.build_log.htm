@@ -1,0 +1,121 @@
+<html>
+<body>
+<pre>
+<h1>µVision Build Log</h1>
+<h2>Tool Versions:</h2>
+IDE-Version: ¦ÌVision V5.21.1.0
+Copyright (C) 2016 ARM Ltd and ARM Germany GmbH. All rights reserved.
+License Information: g user, s, LIC=CZLZX-HSHR1-WF5I7-E0U7L-5RI7S-6HXY5
+ 
+Tool Versions:
+Toolchain:       MDK-ARM Plus  Version: 5.21a
+Toolchain Path:  C:\Farsight\Keil_v5\ARM\ARMCC\Bin
+C Compiler:      Armcc.exe V5.06 update 3 (build 300)
+Assembler:       Armasm.exe V5.06 update 3 (build 300)
+Linker/Locator:  ArmLink.exe V5.06 update 3 (build 300)
+Library Manager: ArmAr.exe V5.06 update 3 (build 300)
+Hex Converter:   FromElf.exe V5.06 update 3 (build 300)
+CPU DLL:         SARMCM3.DLL V5.21a
+Dialog DLL:      DCM.DLL V1.13.8.0
+Target DLL:      STLink\ST-LINKIII-KEIL_SWO.dll V2.0.18.0
+Dialog DLL:      TCM.DLL V1.14.14.0
+ 
+<h2>Project:</h2>
+C:\Users\Administrator\Desktop\work\2_Beep\MDK-ARM\Beep.uvprojx
+Project File Date:  06/03/2025
+
+<h2>Output:</h2>
+*** Using Compiler 'V5.06 update 3 (build 300)', folder: 'C:\Farsight\Keil_v5\ARM\ARMCC\Bin'
+Rebuild target 'Beep Configuration'
+compiling stm32f4xx_hal_flash_ramfunc.c...
+compiling system_stm32f4xx.c...
+compiling stm32f4xx_hal_cortex.c...
+compiling stm32f4xx_hal.c...
+compiling stm32f4xx_hal_gpio.c...
+compiling stm32f4xx_hal_pwr_ex.c...
+compiling stm32f4xx_hal_pwr.c...
+compiling stm32f4xx_hal_dma.c...
+compiling stm32f4xx_hal_flash_ex.c...
+compiling stm32f4xx_hal_rcc_ex.c...
+compiling stm32f4xx_hal_dma_ex.c...
+compiling stm32f4xx_hal_flash.c...
+compiling stm32f4xx_hal_iwdg.c...
+compiling stm32f4xx_hal_rcc.c...
+compiling stm32f4xx_hal_i2c.c...
+compiling gpio.c...
+compiling stm32f4xx_hal_msp.c...
+compiling stm32f4xx_it.c...
+compiling main.c...
+..\Inc\i2c.h(75): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Inc\zlg7290.h(94): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Inc\iwdg.h(95): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Inc\state_machine.h(91): warning:  #1-D: last line of file ends without a newline
+  #endif /* __STATE_MACHINE_H */ 
+..\Inc\data_validator.h(58): warning:  #1-D: last line of file ends without a newline
+  #endif /* __DATA_VALIDATOR_H */ 
+..\Src\main.c(114): warning:  #550-D: variable "i2c_communication_ok" was set but never used
+  static uint8_t i2c_communication_ok = 1;       // I2Cé€?ä¿?çŠ?æ€?æ ?å¿?
+..\Src\main.c: 6 warnings, 0 errors
+compiling i2c.c...
+..\Inc\i2c.h(75): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Src\i2c.c(130): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Src\i2c.c: 2 warnings, 0 errors
+assembling startup_stm32f407xx.s...
+compiling data_validator.c...
+..\Inc\data_validator.h(58): warning:  #1-D: last line of file ends without a newline
+  #endif /* __DATA_VALIDATOR_H */ 
+..\Inc\zlg7290.h(94): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Inc\state_machine.h(91): warning:  #1-D: last line of file ends without a newline
+  #endif /* __STATE_MACHINE_H */ 
+..\Src\data_validator.c(94): warning:  #186-D: pointless comparison of unsigned integer with zero
+      if (
+S_VALID_SYSTEM_STATE(state)) {
+..\Src\data_validator.c(107): warning:  #186-D: pointless comparison of unsigned integer with zero
+      if (
+S_VALID_SYSTEM_EVENT(event)) {
+..\Src\data_validator.c(269): warning:  #1-D: last line of file ends without a newline
+  } 
+..\Src\data_validator.c: 6 warnings, 0 errors
+compiling state_machine.c...
+..\Inc\zlg7290.h(94): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Inc\state_machine.h(91): warning:  #1-D: last line of file ends without a newline
+  #endif /* __STATE_MACHINE_H */ 
+..\Inc\data_validator.h(58): warning:  #1-D: last line of file ends without a newline
+  #endif /* __DATA_VALIDATOR_H */ 
+..\Src\state_machine.c(375): warning:  #1-D: last line of file ends without a newline
+  } 
+..\Src\state_machine.c: 4 warnings, 0 errors
+compiling iwdg.c...
+..\Inc\iwdg.h(95): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Src\iwdg.c(282): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Src\iwdg.c: 2 warnings, 0 errors
+compiling zlg7290.c...
+..\Inc\zlg7290.h(94): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Src\zlg7290.c(22): warning:  #223-D: function "memset" declared implicitly
+      memset(&i2c_error_stats, 0, sizeof(I2C_ErrorStats_t));
+..\Src\zlg7290.c(332): warning:  #1-D: last line of file ends without a newline
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/ 
+..\Src\zlg7290.c: 3 warnings, 0 errors
+linking...
+Program Size: Code=12944 RO-data=468 RW-data=72 ZI-data=1160  
+"Beep Configuration\Beep Configuration.axf" - 0 Error(s), 23 Warning(s).
+
+<h2>Collection of Component include folders:</h2>
+  C:\Users\Administrator\Desktop\work\2_Beep\MDK-ARM\RTE
+  C:\Farsight\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include
+
+<h2>Collection of Component Files used:</h2>
+Build Time Elapsed:  00:00:04
+</pre>
+</body>
+</html>
