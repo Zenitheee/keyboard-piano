@@ -32,4 +32,5 @@ beep configuration\data_validator.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4
 beep configuration\data_validator.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pwr_ex.h
 beep configuration\data_validator.o: ..\Inc\state_machine.h
 beep configuration\data_validator.o: ..\Inc\zlg7290.h
+beep configuration\data_validator.o: ..\Inc\iwdg.h
 beep configuration\data_validator.o: C:\Farsight\Keil_v5\ARM\ARMCC\Bin\..\include\string.h

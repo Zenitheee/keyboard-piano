@@ -38,6 +38,10 @@
 #define I2C_RETRY_DELAY_MS      10          // 重试间隔时间(毫秒)
 #define I2C_RESET_DELAY_MS      50          // I2C复位延时(毫秒)
 
+// 调试相关宏定义
+// 取消注释下面的行以启用I2C验证调试信息
+// #define DEBUG_I2C_VALIDATION
+
 // I2C错误状态枚举
 typedef enum {
     I2C_STATUS_OK = 0,                      // 通信成功
@@ -55,6 +59,10 @@ typedef struct {
     uint32_t retry_operations;              // 重试操作次数
     uint32_t timeout_errors;                // 超时错误次数
     uint32_t bus_errors;                    // 总线错误次数
+    uint32_t validation_operations;         // 验证操作次数
+    uint32_t validation_first_match;        // 前两次读取一致次数
+    uint32_t validation_third_match;        // 第三次读取匹配次数
+    uint32_t validation_failures;           // 验证失败次数
     uint32_t last_error_time;               // 最后错误时间
     HAL_StatusTypeDef last_error_code;      // 最后错误代码
 } I2C_ErrorStats_t;
@@ -80,6 +88,10 @@ void I2C_Init_ErrorStats(void);
 I2C_ErrorStats_t* I2C_Get_ErrorStats(void);
 void I2C_Reset_ErrorStats(void);
 void I2C_Print_ErrorStats(void);
+
+// 新的键盘读取验证机制
+I2C_Status_t I2C_ZLG7290_Read_WithValidation(I2C_HandleTypeDef *I2Cx, uint8_t I2C_Addr, 
+                                              uint8_t addr, uint8_t *buf, uint8_t num);
 
 #endif /* __ZLG7290_H */
 

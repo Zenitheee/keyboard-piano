@@ -3,6 +3,7 @@
 
 #include "stm32f4xx_hal.h"
 #include "zlg7290.h"
+#include "iwdg.h"
 
 /* 系统状态枚举 */
 typedef enum {
@@ -86,6 +87,15 @@ KeyProcessResult_t Process_Key_Input(uint8_t key_number);
     #define STATE_DEBUG_PRINT(fmt, ...) printf(fmt, ##__VA_ARGS__)
 #else
     #define STATE_DEBUG_PRINT(fmt, ...)
+#endif
+
+/* 乱序执行相关宏定义 */
+#ifdef ENABLE_SCRAMBLED_EXECUTION
+    #define SCRAMBLED_EXECUTE() ScrambledExecution_Execute()
+    #define SCRAMBLED_EXECUTE_CRITICAL() ScrambledExecution_ExecuteInCriticalSection()
+#else
+    #define SCRAMBLED_EXECUTE()
+    #define SCRAMBLED_EXECUTE_CRITICAL()
 #endif
 
 #endif /* __STATE_MACHINE_H */ 

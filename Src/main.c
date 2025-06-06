@@ -135,6 +135,7 @@ void Handle_I2C_Error(I2C_Status_t status);
 void Check_I2C_Health(void);
 void IWDG_SystemInit(void);
 void IWDG_SystemTask(void);
+void ScrambledExecution_PrintStats(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -675,24 +676,46 @@ void IWDG_SystemInit(void) {
  * @brief 看门狗系统任务
  */
 void IWDG_SystemTask(void) {
-    // 执行看门狗任务（自动喂狗）
-    IWDG_Task();
+    // 使用序列监控的喂狗机制
+    uint32_t current_time = HAL_GetTick();
+    static uint32_t last_feed_attempt = 0;
+    
+    // 检查是否需要尝试喂狗
+    if(IWDG_IsEnabled() && (current_time - last_feed_attempt >= IWDG_FEED_INTERVAL_MS)) {
+        // 使用带序列检查的喂狗函数
+        IWDG_Status_t feed_status = IWDG_Feed_WithSequenceCheck();
+        
+        last_feed_attempt = current_time;
+        
+        // 可选：记录喂狗状态
+        #ifdef DEBUG_SEQUENCE_MONITOR
+        if (feed_status == IWDG_STATUS_OK) {
+            printf("Watchdog fed successfully\n");
+        } else {
+            printf("Watchdog feed denied by sequence monitor\n");
+        }
+        #endif
+    }
     
     // 可以在这里添加额外的看门狗监控逻辑
-    // 例如：检查系统健康状态、记录喂狗统计等
+    static uint32_t last_monitor_info_time = 0;
     
-    static uint32_t last_feed_info_time = 0;
-    uint32_t current_time = HAL_GetTick();
-    
-    // 每10秒显示一次喂狗统计信息（调试用）
-    if(current_time - last_feed_info_time > 10000) {
-        last_feed_info_time = current_time;
-        
-        // 可以在这里添加调试信息输出
-        // printf("IWDG Feed Count: %lu, Last Feed: %lu ms ago\n", 
-        //        IWDG_GetFeedCount(), 
-        //        current_time - IWDG_GetLastFeedTime());
+    // 每30秒显示一次序列监控统计信息（调试用）
+    #ifdef DEBUG_SEQUENCE_MONITOR
+    if(current_time - last_monitor_info_time > 30000) {
+        last_monitor_info_time = current_time;
+        IWDG_SequenceMonitor_PrintStatus();
     }
+    #endif
+    
+    // 每60秒显示一次乱序执行统计信息（调试用）
+    #ifdef DEBUG_SCRAMBLED_EXECUTION
+    static uint32_t last_scramble_info_time = 0;
+    if(current_time - last_scramble_info_time > 60000) {
+        last_scramble_info_time = current_time;
+        ScrambledExecution_PrintStats();
+    }
+    #endif
 }
 
 /**

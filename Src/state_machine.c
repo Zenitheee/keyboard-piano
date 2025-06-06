@@ -22,6 +22,12 @@ extern void Display_Clear(void);
 extern void Handle_I2C_Error(I2C_Status_t status);
 extern void Check_I2C_Health(void);
 
+/* 外部函数声明（来自iwdg.c）*/
+extern void IWDG_SequenceMonitor_SetCheckpoint(uint8_t checkpoint);
+extern void ScrambledExecution_Execute(void);
+extern void ScrambledExecution_ExecuteInCriticalSection(void);
+extern void ScrambledExecution_UpdateSeed(uint32_t new_seed);
+
 /**
  * @brief 状态机初始化
  */
@@ -203,12 +209,18 @@ void State_Idle_Handler(void) {
  * @brief 按键检测状态处理函数
  */
 void State_KeyDetect_Handler(void) {
+    // 在关键状态开始前执行乱序执行
+    SCRAMBLED_EXECUTE_CRITICAL();
+    
     // 验证数据的正确性
     if (Validate_HotStart_Data((void*)BACKUP_SRAM_BASE) != DATA_VALID) {
         // 数据无效，尝试修复
         Repair_HotStartData();
         DATA_VALIDATION_LOG("HotStart data repaired before key detection\n");
     }
+    
+    // 在I2C通信前执行乱序执行
+    SCRAMBLED_EXECUTE();
     
     I2C_Status_t i2c_status;
     
@@ -217,13 +229,26 @@ void State_KeyDetect_Handler(void) {
         key_flag = 0;
     }
     
-    // 通过I2C读取按键值
-    i2c_status = I2C_ZLG7290_Read_WithRetry(&hi2c1, ZLG7290_ADDR_READ, 
-                                           ZLG7290_Key, state_machine.key_buffer, 1);
+    // 使用新的验证机制读取按键值
+    // 读取两次键盘值,如果一致则使用,如果不一致则读取第三次,
+    // 第三次读取的值如果与前两次的任意一次相同则使用第三次的数据,
+    // 如果仍然不一致则算作读取失败
+    i2c_status = I2C_ZLG7290_Read_WithValidation(&hi2c1, ZLG7290_ADDR_READ, 
+                                                 ZLG7290_Key, state_machine.key_buffer, 1);
     
     if(i2c_status == I2C_STATUS_OK) {
+        // I2C通信成功后执行乱序执行
+        SCRAMBLED_EXECUTE();
+        
         // I2C通信成功，重置重试计数
         state_machine.i2c_retry_count = 0;
+        
+        // 设置任务A检查点 - 按键检测完成
+        IWDG_SequenceMonitor_SetCheckpoint(TASK_CHECKPOINT_A);
+        
+        // 使用按键值更新随机种子
+        ScrambledExecution_UpdateSeed(state_machine.key_buffer[0]);
+        
         StateMachine_SetState(STATE_KEY_PROCESS);
     } else {
         // I2C通信失败
@@ -244,6 +269,9 @@ void State_KeyDetect_Handler(void) {
  * @brief 按键处理状态处理函数
  */
 void State_KeyProcess_Handler(void) {
+    // 在按键处理前执行乱序执行
+    SCRAMBLED_EXECUTE_CRITICAL();
+    
     // 验证数据的正确性
     if (Validate_HotStart_Data((void*)BACKUP_SRAM_BASE) != DATA_VALID) {
         // 数据无效，尝试修复
@@ -254,8 +282,14 @@ void State_KeyProcess_Handler(void) {
     // 获取按键编号
     uint8_t key_number = Get_Key_Number(state_machine.key_buffer[0]);
     
+    // 在按键处理过程中执行乱序执行
+    SCRAMBLED_EXECUTE();
+    
     // 处理按键输入
     KeyProcessResult_t result = Process_Key_Input(key_number);
+    
+    // 设置任务B检查点 - 按键处理完成
+    IWDG_SequenceMonitor_SetCheckpoint(TASK_CHECKPOINT_B);
     
     switch(result) {
         case KEY_RESULT_CLEAR:
@@ -285,6 +319,9 @@ void State_KeyProcess_Handler(void) {
  * @brief 音频播放状态处理函数
  */
 void State_AudioPlay_Handler(void) {
+    // 在音频播放前执行乱序执行（关键操作）
+    SCRAMBLED_EXECUTE_CRITICAL();
+    
     // 验证数据的正确性
     if (Validate_HotStart_Data((void*)BACKUP_SRAM_BASE) != DATA_VALID) {
         // 数据无效，尝试修复
@@ -301,7 +338,20 @@ void State_AudioPlay_Handler(void) {
         is_playing = 1;  // 更新全局变量
         // 音符索引 = 按键值 - 1
         uint8_t note_index = Safe_Get_NoteIndex(safe_key - 1, 0);
+        
+        // 在播放音符前执行乱序执行
+        SCRAMBLED_EXECUTE();
+        
         Play_Note(note_index);
+        
+        // 在播放音符后执行乱序执行
+        SCRAMBLED_EXECUTE();
+        
+        // 设置任务C检查点 - 音频播放完成
+        IWDG_SequenceMonitor_SetCheckpoint(TASK_CHECKPOINT_C);
+        
+        // 使用音符信息更新随机种子
+        ScrambledExecution_UpdateSeed(safe_key ^ note_index);
     }
     
     // 转到显示更新状态
@@ -322,6 +372,9 @@ void State_DisplayUpdate_Handler(void) {
     // 更新显示
     Display_Update();
     
+    // 设置任务D检查点 - 显示更新完成
+    IWDG_SequenceMonitor_SetCheckpoint(TASK_CHECKPOINT_D);
+    
     // 显示更新完成，返回空闲状态
     StateMachine_SetState(STATE_IDLE);
 }
@@ -330,8 +383,20 @@ void State_DisplayUpdate_Handler(void) {
  * @brief 系统维护状态处理函数
  */
 void State_SystemMaintain_Handler(void) {
+    // 在系统维护前执行乱序执行
+    SCRAMBLED_EXECUTE_CRITICAL();
+    
     // 保存热启动状态
     Save_HotStart_State();
+    
+    // 在系统维护后执行乱序执行
+    SCRAMBLED_EXECUTE();
+    
+    // 设置任务E检查点 - 系统维护完成
+    IWDG_SequenceMonitor_SetCheckpoint(TASK_CHECKPOINT_E);
+    
+    // 使用当前时间更新随机种子
+    ScrambledExecution_UpdateSeed(HAL_GetTick());
     
     // 返回空闲状态
     StateMachine_SetState(STATE_IDLE);

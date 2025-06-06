@@ -31,5 +31,6 @@ beep configuration\state_machine.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4x
 beep configuration\state_machine.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pwr.h
 beep configuration\state_machine.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pwr_ex.h
 beep configuration\state_machine.o: ..\Inc\zlg7290.h
+beep configuration\state_machine.o: ..\Inc\iwdg.h
 beep configuration\state_machine.o: ..\Inc\data_validator.h
 beep configuration\state_machine.o: C:\Farsight\Keil_v5\ARM\ARMCC\Bin\..\include\string.h

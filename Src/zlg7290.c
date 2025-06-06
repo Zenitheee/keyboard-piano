@@ -48,10 +48,19 @@ void I2C_Print_ErrorStats(void) {
     printf("Retry Operations: %lu\n", i2c_error_stats.retry_operations);
     printf("Timeout Errors: %lu\n", i2c_error_stats.timeout_errors);
     printf("Bus Errors: %lu\n", i2c_error_stats.bus_errors);
+    printf("--- Validation Statistics ---\n");
+    printf("Validation Operations: %lu\n", i2c_error_stats.validation_operations);
+    printf("First Two Match: %lu\n", i2c_error_stats.validation_first_match);
+    printf("Third Match: %lu\n", i2c_error_stats.validation_third_match);
+    printf("Validation Failures: %lu\n", i2c_error_stats.validation_failures);
     printf("Last Error Code: %d\n", i2c_error_stats.last_error_code);
     printf("Success Rate: %.2f%%\n", 
            i2c_error_stats.total_operations > 0 ? 
            (float)i2c_error_stats.successful_operations * 100.0f / i2c_error_stats.total_operations : 0.0f);
+    if (i2c_error_stats.validation_operations > 0) {
+        printf("Validation Success Rate: %.2f%%\n", 
+               (float)(i2c_error_stats.validation_first_match + i2c_error_stats.validation_third_match) * 100.0f / i2c_error_stats.validation_operations);
+    }
     printf("============================\n\n");
 }
 
@@ -274,6 +283,177 @@ I2C_Status_t I2C_ZLG7290_Write_WithRetry(I2C_HandleTypeDef *I2Cx, uint8_t I2C_Ad
     }
     
     return I2C_STATUS_OK;
+}
+
+/**
+ * @brief 带数据验证的键盘读取函数
+ * 读取两次键盘值,如果一致则使用,如果不一致则读取第三次,
+ * 第三次读取的值如果与前两次的任意一次相同则使用第三次的数据,
+ * 如果仍然不一致则算作读取失败
+ * @param I2Cx I2C句柄
+ * @param I2C_Addr 设备地址
+ * @param addr 寄存器地址
+ * @param buf 数据缓冲区
+ * @param num 数据长度
+ * @return I2C操作状态
+ */
+I2C_Status_t I2C_ZLG7290_Read_WithValidation(I2C_HandleTypeDef *I2Cx, uint8_t I2C_Addr, 
+                                              uint8_t addr, uint8_t *buf, uint8_t num) {
+    HAL_StatusTypeDef hal_status;
+    uint8_t read_buffer1[8] = {0};  // 第一次读取缓冲区
+    uint8_t read_buffer2[8] = {0};  // 第二次读取缓冲区
+    uint8_t read_buffer3[8] = {0};  // 第三次读取缓冲区
+    uint8_t read_count = 0;
+    
+    // 更新统计
+    i2c_error_stats.total_operations++;
+    i2c_error_stats.validation_operations++;
+    
+    // 限制数据长度，防止缓冲区溢出
+    if (num > 8) {
+        num = 8;
+    }
+    
+    // 第一次读取
+    hal_status = HAL_I2C_Mem_Read(I2Cx, I2C_Addr, addr, I2C_MEMADD_SIZE_8BIT, 
+                                  read_buffer1, num, I2CTimeout);
+    if (hal_status != HAL_OK) {
+        // 第一次读取失败，记录错误并返回
+        i2c_error_stats.last_error_code = hal_status;
+        i2c_error_stats.last_error_time = HAL_GetTick();
+        i2c_error_stats.failed_operations++;
+        
+        if (hal_status == HAL_TIMEOUT) {
+            i2c_error_stats.timeout_errors++;
+        } else if (hal_status == HAL_ERROR) {
+            i2c_error_stats.bus_errors++;
+        }
+        
+        return I2C_STATUS_ERROR;
+    }
+    read_count++;
+    
+    // 短暂延时，确保ZLG7290状态稳定
+    HAL_Delay(2);
+    
+    // 第二次读取
+    hal_status = HAL_I2C_Mem_Read(I2Cx, I2C_Addr, addr, I2C_MEMADD_SIZE_8BIT, 
+                                  read_buffer2, num, I2CTimeout);
+    if (hal_status != HAL_OK) {
+        // 第二次读取失败，记录错误并返回
+        i2c_error_stats.last_error_code = hal_status;
+        i2c_error_stats.last_error_time = HAL_GetTick();
+        i2c_error_stats.failed_operations++;
+        
+        if (hal_status == HAL_TIMEOUT) {
+            i2c_error_stats.timeout_errors++;
+        } else if (hal_status == HAL_ERROR) {
+            i2c_error_stats.bus_errors++;
+        }
+        
+        return I2C_STATUS_ERROR;
+    }
+    read_count++;
+    
+    // 比较前两次读取结果
+    uint8_t data_match = 1;
+    for (uint8_t i = 0; i < num; i++) {
+        if (read_buffer1[i] != read_buffer2[i]) {
+            data_match = 0;
+            break;
+        }
+    }
+    
+    if (data_match) {
+        // 前两次读取一致，使用第二次的数据
+        for (uint8_t i = 0; i < num; i++) {
+            buf[i] = read_buffer2[i];
+        }
+        
+        // 更新成功统计
+        i2c_error_stats.successful_operations++;
+        i2c_error_stats.validation_first_match++;
+        return I2C_STATUS_OK;
+    }
+    
+    // 前两次读取不一致，进行第三次读取
+    HAL_Delay(2);
+    
+    hal_status = HAL_I2C_Mem_Read(I2Cx, I2C_Addr, addr, I2C_MEMADD_SIZE_8BIT, 
+                                  read_buffer3, num, I2CTimeout);
+    if (hal_status != HAL_OK) {
+        // 第三次读取失败，记录错误并返回
+        i2c_error_stats.last_error_code = hal_status;
+        i2c_error_stats.last_error_time = HAL_GetTick();
+        i2c_error_stats.failed_operations++;
+        
+        if (hal_status == HAL_TIMEOUT) {
+            i2c_error_stats.timeout_errors++;
+        } else if (hal_status == HAL_ERROR) {
+            i2c_error_stats.bus_errors++;
+        }
+        
+        return I2C_STATUS_ERROR;
+    }
+    read_count++;
+    
+    // 检查第三次读取是否与前两次中的任意一次匹配
+    uint8_t match_with_first = 1;
+    uint8_t match_with_second = 1;
+    
+    // 与第一次比较
+    for (uint8_t i = 0; i < num; i++) {
+        if (read_buffer3[i] != read_buffer1[i]) {
+            match_with_first = 0;
+            break;
+        }
+    }
+    
+    // 与第二次比较
+    for (uint8_t i = 0; i < num; i++) {
+        if (read_buffer3[i] != read_buffer2[i]) {
+            match_with_second = 0;
+            break;
+        }
+    }
+    
+    if (match_with_first || match_with_second) {
+        // 第三次读取与前两次中的某一次匹配，使用第三次的数据
+        for (uint8_t i = 0; i < num; i++) {
+            buf[i] = read_buffer3[i];
+        }
+        
+        // 更新统计（有重试但最终成功）
+        i2c_error_stats.successful_operations++;
+        i2c_error_stats.retry_operations++;
+        i2c_error_stats.validation_third_match++;
+        
+        return I2C_STATUS_OK;
+    }
+    
+    // 三次读取都不一致，读取失败
+    i2c_error_stats.failed_operations++;
+    i2c_error_stats.validation_failures++;
+    
+    // 记录调试信息（可选）
+    #ifdef DEBUG_I2C_VALIDATION
+    printf("I2C Read Validation Failed:\n");
+    printf("Read1: ");
+    for (uint8_t i = 0; i < num; i++) {
+        printf("0x%02X ", read_buffer1[i]);
+    }
+    printf("\nRead2: ");
+    for (uint8_t i = 0; i < num; i++) {
+        printf("0x%02X ", read_buffer2[i]);
+    }
+    printf("\nRead3: ");
+    for (uint8_t i = 0; i < num; i++) {
+        printf("0x%02X ", read_buffer3[i]);
+    }
+    printf("\n");
+    #endif
+    
+    return I2C_STATUS_ERROR;
 }
 
 /*******************************************************************************
